@@ -1,16 +1,18 @@
 import { expect, test } from 'claude-code/testing'
 
-const props = (kind: 'composer' | 'task-notification') => ({
+const question = (kind: 'composer' | 'task-notification') => ({
   text: 'hello',
   origin: { kind },
-  isExpanded: true,
+  isExpanded: false,
 })
 
+const answer = { text: 'answer', isFirstOfReply: true }
+
 for (const surface of ['terminal', 'desktop'] as const) {
-  test(`draws a separator above a typed prompt on ${surface}`, async ($, on) => {
+  test(`draws a separator and a blue bar beside a typed question on ${surface}`, async ($, on) => {
     on('ui.render', { component: 'UserMessage' }, $ => {
       const { Text } = $.ui.resolve({ surface, component: 'UserMessage' })
-      return <Text>{'> hello'}</Text>
+      return <Text>{'❯ hello'}</Text>
     })
 
     const ui = await $.ui.mount({
@@ -19,11 +21,12 @@ for (const surface of ['terminal', 'desktop'] as const) {
       component: 'UserMessage',
       requestId: 'm1',
       viewport: { columns: 10, rows: 20 },
-      props: props('composer'),
+      props: question('composer'),
     })
 
     expect((await ui.find({ type: 'Text', text: /━/ }))?.text).toBe('━'.repeat(10))
-    expect(await ui.find({ text: '> hello' })).toBeDefined()
+    expect((await ui.find({ type: 'Text', text: /hello/ }))?.text).toBe('hello')
+    expect(JSON.stringify(await ui.drawn())).toContain('"backgroundColor":"#5f87d7"')
   })
 
   test(`leaves a task notification alone on ${surface}`, async ($, on) => {
@@ -37,9 +40,30 @@ for (const surface of ['terminal', 'desktop'] as const) {
       surface,
       component: 'UserMessage',
       requestId: 'm2',
-      props: props('task-notification'),
+      props: question('task-notification'),
     })
 
     expect(await ui.find({ text: /━/ })).toBeUndefined()
+    expect((await ui.find({ type: 'Text' }))?.text).toBe('task done')
+  })
+
+  test(`draws a green bar beside an answer without its bullet on ${surface}`, async ($, on) => {
+    let isFirstOfReply: boolean | undefined
+    on('ui.render', { component: 'AssistantMessage' }, ($, e) => {
+      isFirstOfReply = e.props.isFirstOfReply
+      const { Text } = $.ui.resolve({ surface, component: 'AssistantMessage' })
+      return <Text>{'answer'}</Text>
+    })
+
+    const ui = await $.ui.mount({
+      plugin: 'turn-separator',
+      surface,
+      component: 'AssistantMessage',
+      requestId: 'a1',
+      props: answer,
+    })
+
+    expect(JSON.stringify(await ui.drawn())).toContain('"backgroundColor":"#5faf5f"')
+    expect(isFirstOfReply).toBe(false)
   })
 }

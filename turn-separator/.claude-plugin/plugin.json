@@ -1,1 +1,1 @@
-{ "name": "turn-separator", "version": "0.1.0", "description": "Draws a line between question and answer blocks in the transcript" }
+{ "name": "turn-separator", "version": "0.3.0", "description": "Separates question and answer blocks in the transcript with a line and coloured bars" }
