@@ -1,5 +1,7 @@
 import type { Elements, Register, RenderNode } from 'claude-code'
 
+import { withoutBarIndent } from './copy'
+
 const QUESTION_BAR = '#5f87d7'
 const ANSWER_BAR = '#5faf5f'
 const SEPARATED = new Set(['composer', 'bridge'])
@@ -35,5 +37,15 @@ export const register: Register = on => {
     const drawn = await next({ ...e, props: { ...e.props, isFirstOfReply: false } })
 
     return withBar(Box, ANSWER_BAR, drawn)
+  })
+
+  on('ui.copy', async ($, e, next) => {
+    const selected = await $.ui.selection()
+
+    if (selected?.text !== e.text) {
+      return next(e)
+    }
+
+    return next({ ...e, text: withoutBarIndent(e.text) })
   })
 }

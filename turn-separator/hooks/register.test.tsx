@@ -67,3 +67,4 @@ for (const surface of ['terminal', 'desktop'] as const) {
     expect(isFirstOfReply).toBe(false)
   })
 }
+
