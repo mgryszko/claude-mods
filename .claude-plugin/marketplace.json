@@ -1,0 +1,8 @@
+{
+  "name": "claude-mods",
+  "owner": { "name": "Marcin Gryszko" },
+  "plugins": [
+    { "name": "turn-separator", "source": "./turn-separator", "description": "Separates question and answer blocks in the transcript with a line and coloured bars" },
+    { "name": "voice-cleanup", "source": "./voice-cleanup", "description": "Cleans dictated prompts with Haiku: drops fillers, repetitions and stutters, fixes grammar" }
+  ]
+}
