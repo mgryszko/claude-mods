@@ -1,1 +1,1 @@
-{ "name": "turn-separator", "version": "0.3.0", "description": "Separates question and answer blocks in the transcript with a line and coloured bars" }
+{ "name": "turn-separator", "version": "0.4.0", "description": "Separates question and answer blocks in the transcript with a line and coloured bars, and marks each turn's closing recap", "types": "./types/index.d.ts" }

@@ -77,6 +77,7 @@ If Haiku fails or takes longer than 8 seconds, the original prompt goes through 
 ## turn-separator
 
 Draws a dim line above each prompt you send, a blue bar beside your questions and a green bar beside Claude's answers.
+The last message of each turn, Claude's recap of what it did, gets an amber bar instead of a green one, so it stands out from the steps before it.
 Copying a selection in fullscreen mode leaves the bars out of the clipboard.
 
 ## Development

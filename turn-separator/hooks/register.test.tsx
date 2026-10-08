@@ -68,3 +68,49 @@ for (const surface of ['terminal', 'desktop'] as const) {
   })
 }
 
+
+const recap = (text: string) => ({ answer: text, durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answer' as const })
+
+for (const surface of ['terminal', 'desktop'] as const) {
+  test(`draws an amber bar beside the turn's closing recap on ${surface}`, async ($, on) => {
+    on('turn.complete', (_$, e) => ({ text: e.answer }))
+    on('ui.render', { component: 'AssistantMessage' }, $ => {
+      const { Text } = $.ui.resolve({ surface, component: 'AssistantMessage' })
+      return <Text>{'All tests pass.'}</Text>
+    })
+
+    await $.turn.complete(recap('All tests pass.'))
+    const ui = await $.ui.mount({
+      plugin: 'turn-separator',
+      surface,
+      component: 'AssistantMessage',
+      requestId: 'a2',
+      props: { ...answer, text: 'All tests pass.' },
+    })
+
+    const drawn = JSON.stringify(await ui.drawn())
+    expect(drawn).toContain('"backgroundColor":"#ffaf00"')
+    expect(drawn).not.toContain('#5faf5f')
+  })
+
+  test(`keeps the plain green bar on answer blocks before the recap on ${surface}`, async ($, on) => {
+    on('turn.complete', (_$, e) => ({ text: e.answer }))
+    on('ui.render', { component: 'AssistantMessage' }, $ => {
+      const { Text } = $.ui.resolve({ surface, component: 'AssistantMessage' })
+      return <Text>{"I'll look at the parser."}</Text>
+    })
+
+    await $.turn.complete(recap('All tests pass.'))
+    const ui = await $.ui.mount({
+      plugin: 'turn-separator',
+      surface,
+      component: 'AssistantMessage',
+      requestId: 'a3',
+      props: { ...answer, text: "I'll look at the parser." },
+    })
+
+    const drawn = JSON.stringify(await ui.drawn())
+    expect(drawn).toContain('"backgroundColor":"#5faf5f"')
+    expect(drawn).not.toContain('#ffaf00')
+  })
+}
