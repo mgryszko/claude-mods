@@ -4,7 +4,7 @@ Mods for Claude Code: small plugins that hook into the terminal UI and the promp
 
 | Mod | What it does |
 | --- | --- |
-| `voice-cleanup` | Cleans up prompts dictated with voice mode before they reach the model |
+| `voice-cleanup` | Cleans up prompts dictated with voice mode using a Claude Haiku model, before they reach the main model |
 | `turn-separator` | Separates question and answer blocks in the transcript with a line and coloured bars |
 
 ## Install
@@ -43,6 +43,8 @@ claude plugin uninstall voice-cleanup@claude-mods
 ## voice-cleanup
 
 Voice transcription keeps fillers, stutters and repeated words, and non-native speakers also get the odd grammar slip.
+The cleanup is done by a Claude Haiku model (the `haiku` alias), called separately from the model your session runs on.
+It goes through your own Claude Code login, so no extra API key is needed.
 When you submit a dictated prompt, the mod sends it to Haiku, which:
 
 - removes fillers and hesitations (um, uh, er, hmm)
