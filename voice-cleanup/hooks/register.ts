@@ -1,4 +1,4 @@
-import type { Register } from 'claude-code'
+import type { EngineInterface, Register } from 'claude-code'
 
 import { cleanupRequest, wasDictated } from './clean'
 
@@ -6,11 +6,15 @@ const RECALL_DEPTH = 100
 
 let insertedByEdits = 0
 let suggestion = ''
-const submitted: string[] = []
 
-function remember(...texts: string[]) {
-  submitted.push(...texts)
-  submitted.splice(0, Math.max(0, submitted.length - RECALL_DEPTH))
+async function submitted($: EngineInterface) {
+  const stored = await $.store.get('submitted')
+  return Array.isArray(stored) ? stored.filter((text): text is string => typeof text === 'string') : []
+}
+
+async function remember($: EngineInterface, ...texts: string[]) {
+  const kept = [...(await submitted($)), ...texts.map(text => text.trim())]
+  await $.store.set('submitted', kept.slice(-RECALL_DEPTH))
 }
 
 export const register: Register = on => {
@@ -31,9 +35,9 @@ export const register: Register = on => {
     const inserted = insertedByEdits
     insertedByEdits = 0
 
-    const recalled = e.text === suggestion || submitted.includes(e.text)
+    const recalled = e.text === suggestion || (await submitted($)).includes(e.text.trim())
     if (e.origin.kind !== 'composer' || recalled || !wasDictated(e.text, inserted)) {
-      remember(e.text)
+      await remember($, e.text)
       return next(e)
     }
 
@@ -42,12 +46,12 @@ export const register: Register = on => {
 
     if (!cleaned) {
       $.ui.toast(`Voice cleanup skipped: ${reply.isAnswered ? 'empty reply' : reply.reason}`)
-      remember(e.text)
+      await remember($, e.text)
       return next(e)
     }
 
     $.ui.toast(`Voice cleanup: ${cleaned}`)
-    remember(e.text, cleaned)
+    await remember($, e.text, cleaned)
     return next({ ...e, text: cleaned })
   })
 }
