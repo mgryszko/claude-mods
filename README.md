@@ -58,10 +58,13 @@ The prompt box keeps the raw dictation until you press Enter, since voice mode g
 ### What counts as dictated
 
 Voice mode puts its transcript in the prompt box without going through the editor,
-so the mod treats a prompt as dictated when most of its text never arrived through typing or pasting.
+so the mod counts the text that appeared in the box between your edits,
+and treats a prompt as dictated when that text outweighs what you typed.
+Pasted text counts for neither side, so a prompt that mixes dictation and a paste is cleaned, whatever their order and sizes.
+Haiku sees only the dictated part of such a prompt, and the pasted text reaches the model as you pasted it.
 These prompts are left alone:
 
-- typed or pasted prompts
+- typed or pasted prompts, and typed prompts with a paste
 - slash commands and `!` shell commands
 - prompts recalled with the up arrow or restored with rewind
 - a suggestion accepted with Tab

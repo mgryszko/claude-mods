@@ -1,11 +1,21 @@
 import type { EngineInterface, Register } from 'claude-code'
 
-import { cleanupRequest, wasDictated } from './clean'
+import { cleanupRequest, unpasted, wasDictated, withoutPastes, withPastes } from './clean'
 
 const RECALL_DEPTH = 100
 
-let insertedByEdits = 0
+let box = ''
+let typed = 0
+let dictated = 0
 let suggestion = ''
+
+const arrivedWithoutEdits = (text: string) => Math.max(0, unpasted(text).length - unpasted(box).length)
+
+const startOver = () => {
+  box = ''
+  typed = 0
+  dictated = 0
+}
 
 async function submitted($: EngineInterface) {
   const stored = await $.store.get('submitted')
@@ -19,8 +29,21 @@ async function remember($: EngineInterface, ...texts: string[]) {
 
 export const register: Register = on => {
   on('prompt.edit', async ($, e, next) => {
-    insertedByEdits += e.inputText.length
-    return next(e)
+    if (e.text) {
+      dictated += arrivedWithoutEdits(e.text)
+    } else {
+      startOver()
+    }
+    if (e.key) {
+      typed += e.inputText.length
+    }
+    const result = await next(e)
+    if (result.text) {
+      box = result.text
+    } else {
+      startOver()
+    }
+    return result
   })
 
   on('prompt.suggest', async ($, e, next) => {
@@ -32,25 +55,33 @@ export const register: Register = on => {
   })
 
   on('prompt.submit', async ($, e, next) => {
-    const inserted = insertedByEdits
-    insertedByEdits = 0
+    if (e.origin.kind !== 'composer') {
+      await remember($, e.text)
+      return next(e)
+    }
+
+    const isDictated = wasDictated(e.text, typed, dictated + arrivedWithoutEdits(e.text))
+    startOver()
 
     const recalled = e.text === suggestion || (await submitted($)).includes(e.text.trim())
-    if (e.origin.kind !== 'composer' || recalled || !wasDictated(e.text, inserted)) {
+    if (recalled || !isDictated) {
       await remember($, e.text)
       return next(e)
     }
 
-    const reply = await $.model.complete(cleanupRequest(e.text))
-    const cleaned = reply.isAnswered ? reply.text.trim() : ''
+    const { spoken, pastes } = withoutPastes(e.text)
+    const reply = await $.model.complete(cleanupRequest(spoken))
+    const cleanedSpoken = reply.isAnswered ? reply.text.trim() : ''
+    const cleaned = cleanedSpoken && withPastes(cleanedSpoken, pastes)
 
     if (!cleaned) {
-      $.ui.toast(`Voice cleanup skipped: ${reply.isAnswered ? 'empty reply' : reply.reason}`)
+      const why = !reply.isAnswered ? reply.reason : !cleanedSpoken ? 'empty reply' : 'pasted text lost'
+      $.ui.toast(`Voice cleanup skipped: ${why}`)
       await remember($, e.text)
       return next(e)
     }
 
-    $.ui.toast(`Voice cleanup: ${cleaned}`)
+    $.ui.toast(`Voice cleanup: ${cleanedSpoken}`)
     await remember($, e.text, cleaned)
     return next({ ...e, text: cleaned })
   })

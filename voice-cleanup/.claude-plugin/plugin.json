@@ -1,1 +1,1 @@
-{ "name": "voice-cleanup", "version": "0.2.0", "description": "Cleans dictated prompts with Haiku: drops fillers, repetitions and stutters, fixes grammar" }
+{ "name": "voice-cleanup", "version": "0.3.0", "description": "Cleans dictated prompts with Haiku: drops fillers, repetitions and stutters, fixes grammar" }
